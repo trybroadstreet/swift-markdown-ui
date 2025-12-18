@@ -52,9 +52,17 @@ public enum RawTableColumnAlignment: Character {
 }
 
 public struct RawTableRow: Hashable {
-  let cells: [RawTableCell]
+  public let cells: [RawTableCell]
+
+    public init(cells: [RawTableCell]) {
+        self.cells = cells
+    }
 }
 
 public struct RawTableCell: Hashable {
-  let content: [InlineNode]
+  public let content: [InlineNode]
+
+    public init(content: [InlineNode]) {
+        self.content = content
+    }
 }
