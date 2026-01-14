@@ -118,6 +118,12 @@ public struct Theme: Sendable {
   /// The link style.
   public var link: TextStyle = EmptyTextStyle()
 
+  /// The custom link view style.
+  ///
+  /// Use this to provide custom rendering for links, such as adding favicons or other decorations.
+  /// If set, this takes precedence over the ``link`` text style.
+  public var linkStyle: LinkStyle<LinkConfiguration>? = nil
+
   var headings = Array(
     repeating: BlockStyle<BlockConfiguration> { $0.label },
     count: 6
@@ -245,6 +251,33 @@ extension Theme {
   public func link<S: TextStyle>(@TextStyleBuilder link: () -> S) -> Theme {
     var theme = self
     theme.link = link()
+    return theme
+  }
+
+  /// Adds a custom link view style to the theme.
+  /// - Parameter body: A view builder that returns a customized link view.
+  ///
+  /// Use this method to provide custom rendering for links, such as adding favicons:
+  ///
+  /// ```swift
+  /// Theme()
+  ///   .linkStyle { configuration in
+  ///     if let urlString = configuration.destination,
+  ///        let url = URL(string: urlString) {
+  ///       HStack(spacing: 4) {
+  ///         Favicon(url).frame(width: 16, height: 16)
+  ///         configuration.label
+  ///       }
+  ///     } else {
+  ///       configuration.label
+  ///     }
+  ///   }
+  /// ```
+  public func linkStyle<Body: View>(
+    @ViewBuilder body: @escaping (_ configuration: LinkConfiguration) -> Body
+  ) -> Theme {
+    var theme = self
+    theme.linkStyle = .init(body: body)
     return theme
   }
 }

@@ -40,6 +40,37 @@ extension View {
     self.environment((\EnvironmentValues.theme).appending(path: keyPath), .init(body: body))
   }
 
+  /// Sets a custom link style for rendering Markdown links with custom views.
+  /// - Parameter body: A view builder that receives the link configuration and returns the customized link view.
+  ///
+  /// Use this modifier to provide custom rendering for links, such as adding favicons:
+  ///
+  /// ```swift
+  /// Markdown {
+  ///   """
+  ///   Check out [Google](https://google.com) and [Apple](https://apple.com).
+  ///   """
+  /// }
+  /// .markdownLinkStyle { configuration in
+  ///   if let urlString = configuration.destination,
+  ///      let url = URL(string: urlString) {
+  ///     HStack(spacing: 4) {
+  ///       Favicon(url).frame(width: 16, height: 16)
+  ///       configuration.label
+  ///     }
+  ///   } else {
+  ///     configuration.label
+  ///   }
+  /// }
+  /// ```
+  public func markdownLinkStyle<Body: View>(
+    @ViewBuilder body: @escaping (_ configuration: LinkConfiguration) -> Body
+  ) -> some View {
+    self.transformEnvironment(\.theme) { theme in
+      theme.linkStyle = .init(body: body)
+    }
+  }
+
   /// Replaces the current ``Theme`` task list marker with the given list marker.
   public func markdownTaskListMarker(
     _ value: BlockStyle<TaskListMarkerConfiguration>

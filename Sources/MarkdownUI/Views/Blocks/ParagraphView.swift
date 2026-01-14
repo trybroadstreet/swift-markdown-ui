@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ParagraphView: View {
   @Environment(\.theme.paragraph) private var paragraph
+  @Environment(\.theme) private var theme
 
   private let content: [InlineNode]
 
@@ -33,6 +34,10 @@ struct ParagraphView: View {
       let imageFlow = ImageFlow(content)
     {
       imageFlow
+    } else if #available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, *),
+      let linkFlow = LinkFlow(content, theme: self.theme)
+    {
+      linkFlow
     } else {
       InlineText(content)
     }
