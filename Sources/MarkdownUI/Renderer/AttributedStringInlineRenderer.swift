@@ -5,13 +5,15 @@ extension InlineNode {
     baseURL: URL?,
     textStyles: InlineTextStyles,
     softBreakMode: SoftBreak.Mode,
-    attributes: AttributeContainer
+    attributes: AttributeContainer,
+    isCitation: Bool = false
   ) -> AttributedString {
     var renderer = AttributedStringInlineRenderer(
       baseURL: baseURL,
       textStyles: textStyles,
       softBreakMode: softBreakMode,
-      attributes: attributes
+      attributes: attributes,
+      isCitation: isCitation
     )
     renderer.render(self)
     return renderer.result.resolvingFonts()
@@ -26,17 +28,20 @@ private struct AttributedStringInlineRenderer {
   private let softBreakMode: SoftBreak.Mode
   private var attributes: AttributeContainer
   private var shouldSkipNextWhitespace = false
+  private let isCitation: Bool
 
   init(
     baseURL: URL?,
     textStyles: InlineTextStyles,
     softBreakMode: SoftBreak.Mode,
-    attributes: AttributeContainer
+    attributes: AttributeContainer,
+    isCitation: Bool
   ) {
     self.baseURL = baseURL
     self.textStyles = textStyles
     self.softBreakMode = softBreakMode
     self.attributes = attributes
+    self.isCitation = isCitation
   }
 
   mutating func render(_ inline: InlineNode) {
@@ -141,8 +146,16 @@ private struct AttributedStringInlineRenderer {
 
   private mutating func renderLink(destination: String, children: [InlineNode]) {
     let savedAttributes = self.attributes
-    self.attributes = self.textStyles.link.mergingAttributes(self.attributes)
-    self.attributes.link = URL(string: destination, relativeTo: self.baseURL)
+    let url = URL(string: destination, relativeTo: self.baseURL)
+
+    // Use linkTextStyleProvider if available, otherwise fall back to link TextStyle
+    if let provider = self.textStyles.linkTextStyleProvider {
+      self.attributes = provider.textStyle(for: url, isCitation: self.isCitation).mergingAttributes(self.attributes)
+    } else {
+      self.attributes = self.textStyles.link.mergingAttributes(self.attributes)
+    }
+
+    self.attributes.link = url
 
     for child in children {
       self.render(child)

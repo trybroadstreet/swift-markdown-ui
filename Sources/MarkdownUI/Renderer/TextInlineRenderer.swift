@@ -8,14 +8,18 @@ extension Sequence where Element == InlineNode {
     softBreakMode: SoftBreak.Mode,
     attributes: AttributeContainer
   ) -> Text {
+    let nodes = Array(self)
+    let result = LinkCitationDetector.detectAndStripCitations(in: nodes)
+
     var renderer = TextInlineRenderer(
       baseURL: baseURL,
       textStyles: textStyles,
       images: images,
       softBreakMode: softBreakMode,
-      attributes: attributes
+      attributes: attributes,
+      citations: result.citations
     )
-    renderer.render(self)
+    renderer.render(result.processedNodes)
     return renderer.result
   }
 }
@@ -28,24 +32,29 @@ private struct TextInlineRenderer {
   private let images: [String: Image]
   private let softBreakMode: SoftBreak.Mode
   private let attributes: AttributeContainer
+  private let citations: Set<Int>
   private var shouldSkipNextWhitespace = false
+  private var currentIndex = 0
 
   init(
     baseURL: URL?,
     textStyles: InlineTextStyles,
     images: [String: Image],
     softBreakMode: SoftBreak.Mode,
-    attributes: AttributeContainer
+    attributes: AttributeContainer,
+    citations: Set<Int>
   ) {
     self.baseURL = baseURL
     self.textStyles = textStyles
     self.images = images
     self.softBreakMode = softBreakMode
     self.attributes = attributes
+    self.citations = citations
   }
 
-  mutating func render<S: Sequence>(_ inlines: S) where S.Element == InlineNode {
-    for inline in inlines {
+  mutating func render(_ inlines: [InlineNode]) {
+    for (index, inline) in inlines.enumerated() {
+      self.currentIndex = index
       self.render(inline)
     }
   }
@@ -107,6 +116,8 @@ private struct TextInlineRenderer {
   }
 
   private mutating func defaultRender(_ inline: InlineNode) {
+    let isCitation = self.citations.contains(self.currentIndex)
+
     self.result =
       self.result
       + Text(
@@ -114,7 +125,8 @@ private struct TextInlineRenderer {
           baseURL: self.baseURL,
           textStyles: self.textStyles,
           softBreakMode: self.softBreakMode,
-          attributes: self.attributes
+          attributes: self.attributes,
+          isCitation: isCitation
         )
       )
   }

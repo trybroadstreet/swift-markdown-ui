@@ -18,6 +18,40 @@ extension View {
     self.environment((\EnvironmentValues.theme).appending(path: keyPath), textStyle())
   }
 
+  /// Sets a URL-aware text style provider for links in the current ``Theme``.
+  /// - Parameter provider: A closure that receives the link's URL and citation status, returning the appropriate TextStyle.
+  ///
+  /// Use this modifier to style links conditionally based on their destination URL and context:
+  ///
+  /// ```swift
+  /// Markdown {
+  ///   """
+  ///   Visit [Google](https://google.com) and see ([this article](https://example.com)).
+  ///   """
+  /// }
+  /// .markdownLinkTextStyle { url, isCitation in
+  ///   if isCitation {
+  ///     ForegroundColor(.secondary)
+  ///   } else if url?.host == "google.com" {
+  ///     ForegroundColor(.blue)
+  ///   } else if url?.host == "amazon.com" {
+  ///     ForegroundColor(.orange)
+  ///   } else {
+  ///     ForegroundColor(.purple)
+  ///   }
+  /// }
+  /// ```
+  ///
+  /// This maintains inline text flow while allowing URL-based and context-aware conditional styling.
+  /// Citations are links surrounded by parentheses: `([link text](url))`
+  public func markdownLinkTextStyle(
+    @TextStyleBuilder provider: @escaping @Sendable (URL?, Bool) -> any TextStyle
+  ) -> some View {
+    self.transformEnvironment(\.theme) { theme in
+      theme.linkTextStyleProvider = .init(provider: provider)
+    }
+  }
+
   /// Replaces a specific block style on the current ``Theme`` with a block style initialized with the given body closure.
   /// - Parameters:
   ///   - keyPath: The ``Theme`` key path to the block style to replace.

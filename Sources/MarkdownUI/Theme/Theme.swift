@@ -118,6 +118,23 @@ public struct Theme: Sendable {
   /// The link style.
   public var link: TextStyle = EmptyTextStyle()
 
+  /// A provider that returns different TextStyles based on the link's URL.
+  ///
+  /// Use this to style links conditionally based on their destination:
+  ///
+  /// ```swift
+  /// .markdownLinkTextStyle { url in
+  ///   if url?.host == "google.com" {
+  ///     ForegroundColor(.blue)
+  ///   } else {
+  ///     ForegroundColor(.purple)
+  ///   }
+  /// }
+  /// ```
+  ///
+  /// If set, this takes precedence over the ``link`` text style but maintains inline text flow.
+  public var linkTextStyleProvider: LinkTextStyleProvider? = nil
+
   /// The custom link view style.
   ///
   /// Use this to provide custom rendering for links, such as adding favicons or other decorations.
@@ -251,6 +268,36 @@ extension Theme {
   public func link<S: TextStyle>(@TextStyleBuilder link: () -> S) -> Theme {
     var theme = self
     theme.link = link()
+    return theme
+  }
+
+  /// Adds a URL-aware link text style provider to the theme.
+  /// - Parameter provider: A closure that receives the link URL and citation status, returning the appropriate TextStyle.
+  ///
+  /// Use this method to style links conditionally based on their destination URL and context:
+  ///
+  /// ```swift
+  /// Theme()
+  ///   .linkTextStyle { url, isCitation in
+  ///     if isCitation {
+  ///       ForegroundColor(.secondary)
+  ///     } else if url?.host == "google.com" {
+  ///       ForegroundColor(.blue)
+  ///     } else if url?.host == "amazon.com" {
+  ///       ForegroundColor(.orange)
+  ///     } else {
+  ///       ForegroundColor(.purple)
+  ///     }
+  ///   }
+  /// ```
+  ///
+  /// This maintains inline text flow while allowing URL-based and context-aware conditional styling.
+  /// Citations are links surrounded by parentheses: `([link text](url))`
+  public func linkTextStyle(
+    @TextStyleBuilder provider: @escaping (URL?, Bool) -> any TextStyle
+  ) -> Theme {
+    var theme = self
+    theme.linkTextStyleProvider = .init(provider: provider)
     return theme
   }
 
